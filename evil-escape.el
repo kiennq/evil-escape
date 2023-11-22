@@ -327,7 +327,8 @@ If any of these functions return non nil, evil escape will be inhibited."
     (`emacs (evil-escape--delete-2))
     (`hybrid (evil-escape--delete-2))
     (`normal
-     (when (minibuffer-window-active-p (evil-escape--delete-func))))
+     (when (minibuffer-window-active-p (current-buffer))
+       (evil-escape--delete-func)))
     (`iedit-insert (evil-escape--delete-func))))
 
 (defun evil-escape--delete-2 ()
