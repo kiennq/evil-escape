@@ -114,7 +114,9 @@
   :group 'evil-escape)
 
 (defcustom evil-escape-delay 0.1
-  "Max time delay between two key presses."
+  "Maximum time to wait for the second escape key.
+The first key's command is deferred until this timeout expires or a
+non-matching event arrives."
   :type 'number
   :group 'evil-escape)
 
@@ -199,14 +201,9 @@ If any of these functions return non nil, evil escape will be inhibited."
     (when (evil-escape-p)
       ;; Don't inhibit redisplay, else visual mode j key will not be updated.
       (let* ((inhibit-redisplay nil)
-             (fontification-functions nil)
-             (modified (buffer-modified-p))
-             (inserted (evil-escape--insert))
              (fkey (elt evil-escape-key-sequence 0))
              (skey (elt evil-escape-key-sequence 1))
              (evt (read-event nil nil evil-escape-delay)))
-        (when inserted (evil-escape--delete))
-        (restore-buffer-modified-p modified)
         (cond
          ((and (characterp evt)
                (or (and (equal (evil-escape-command-keys) (evil-escape--first-key))
@@ -307,53 +304,6 @@ If any of these functions return non nil, evil escape will be inhibited."
   (let* ((sec-key (elt evil-escape-key-sequence 1))
          (fkeystr (char-to-string sec-key)))
     fkeystr))
-
-(defun evil-escape--insert-func ()
-  "Default insert function."
-  (when (not buffer-read-only) (self-insert-command 1)))
-
-(defun evil-escape--delete-func ()
-  "Delete char in current buffer if not read only."
-  (when (not buffer-read-only) (delete-char -1)))
-
-(defun evil-escape--insert ()
-  "Insert the first key of the sequence."
-  (condition-case nil
-      (pcase evil-state
-        (`insert (evil-escape--insert-2) t)
-        (`emacs (evil-escape--insert-2) t)
-        (`hybrid (evil-escape--insert-2) t)
-        (`normal
-         (when (window-minibuffer-p) (evil-escape--insert-func) t))
-        (`iedit-insert (evil-escape--insert-func) t))
-    (error nil)))
-
-(defun evil-escape--insert-2 ()
-  "Insert character while taking into account mode specificites."
-  (pcase major-mode
-    (`term-mode (call-interactively 'term-send-raw))
-    (_ (cond
-        ((bound-and-true-p isearch-mode) (isearch-printing-char))
-        (t (evil-escape--insert-func))))))
-
-(defun evil-escape--delete ()
-  "Revert the insertion of the first key of the sequence."
-  (pcase evil-state
-    (`insert (evil-escape--delete-2))
-    (`emacs (evil-escape--delete-2))
-    (`hybrid (evil-escape--delete-2))
-    (`normal
-     (when (minibuffer-window-active-p (current-buffer))
-       (evil-escape--delete-func)))
-    (`iedit-insert (evil-escape--delete-func))))
-
-(defun evil-escape--delete-2 ()
-  "Delete character while taking into account mode specifities."
-  (pcase major-mode
-    (`term-mode (call-interactively 'term-send-backspace))
-    (_ (cond
-        ((bound-and-true-p isearch-mode) (isearch-delete-char))
-        (t (evil-escape--delete-func))))))
 
 (defun evil-escape--escape-with-q ()
   "Send `q' key press event to exit from a buffer."

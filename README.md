@@ -94,6 +94,13 @@ composed with the two same characters it is recommended to set the delay to
 (setq-default evil-escape-delay 0.2)
 ```
 
+The first key's command and display are deferred until the second key arrives
+or the timeout expires. A matching escape sequence does not insert or delete
+text, so it does not trigger editing hooks and works in read-only buffers.
+On a timeout or mismatch, the first key's command runs normally; a mismatched
+second event is processed next. Increasing the delay can make a literal first
+key appear later, but a matching escape does not wait for the full timeout.
+
 ### Unordered key sequence
 
 The key sequence can be entered in any order by setting
